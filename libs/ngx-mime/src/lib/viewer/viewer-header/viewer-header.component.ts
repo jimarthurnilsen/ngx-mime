@@ -16,7 +16,7 @@ import {
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
 import { ManifestUtils } from '../../core/iiif-manifest-service/iiif-manifest-utils';
 import { MimeDomHelper } from '../../core/mime-dom-helper';
 import { ViewerOptions } from '../../core/models/viewer-options';
@@ -28,6 +28,8 @@ import { FullscreenService } from './../../core/fullscreen-service/fullscreen.se
 import { IiifManifestService } from './../../core/iiif-manifest-service/iiif-manifest-service';
 import { MimeViewerIntl } from './../../core/intl';
 import { Manifest } from './../../core/models/manifest';
+import { ViewerService } from '../../core/viewer-service/viewer.service';
+import { CanvasService } from '../../core/canvas-service/canvas-service';
 
 @Component({
   selector: 'mime-viewer-header',
@@ -86,7 +88,9 @@ export class ViewerHeaderComponent implements OnInit, OnDestroy {
     private helpDialogService: HelpDialogService,
     private iiifManifestService: IiifManifestService,
     private fullscreenService: FullscreenService,
-    private mimeDomHelper: MimeDomHelper
+    private mimeDomHelper: MimeDomHelper,
+    private viewerService: ViewerService,
+    private canvasService: CanvasService,
   ) {}
 
   @HostBinding('@headerState')
@@ -171,5 +175,13 @@ export class ViewerHeaderComponent implements OnInit, OnDestroy {
       ? this.intl.exitFullScreenLabel
       : this.intl.fullScreenLabel;
     this.changeDetectorRef.detectChanges();
+  }
+
+  toggleFitToWidth() {
+    this.canvasService.toggleFitToWidth();
+  }
+
+  toggleFitToHeight() {
+    this.canvasService.toggleFitToHeight();
   }
 }

@@ -3,7 +3,6 @@ import * as OpenSeadragon from 'openseadragon';
 import { CanvasService } from '../canvas-service/canvas-service';
 import { ModeService } from '../mode-service/mode.service';
 import { Dimensions } from '../models/dimensions';
-import { Direction } from '../models/direction';
 import { Point } from '../models/point';
 import { ViewerLayout } from '../models/viewer-layout';
 import { ViewerMode } from '../models/viewer-mode';
@@ -11,19 +10,15 @@ import { ViewerOptions } from '../models/viewer-options';
 import { Utils } from '../utils';
 import { ViewerLayoutService } from '../viewer-layout-service/viewer-layout-service';
 import { ZoomUtils } from './zoom-utils';
-
-export interface CanvasGroup {
-  canvasGroupIndex: number;
-  canvasGroupEndHitCountReached?: boolean;
-  direction: Direction;
-  immediately: boolean;
-}
+import { Rect } from 'openseadragon';
 
 export interface Strategy {
   setMinZoom(mode: ViewerMode): void;
   getMinZoom(): number;
   getMaxZoom(): number;
   getZoom(): number;
+  getHomeZoomLevel(mode: ViewerMode): number;
+  getFittedZoomLevel(viewportBounds: any, canvasGroupHeight: number, canvasGroupWidth: number): number;
   goToHomeZoom(): void;
   zoomTo(level: number, position?: Point): void;
   zoomIn(zoomFactor?: number, position?: Point): void;
@@ -67,7 +62,7 @@ export class ZoomStrategy {
     }
   }
 
-  private getHomeZoomLevel(mode: ViewerMode): number {
+  getHomeZoomLevel(mode: ViewerMode): number {
     if (!this.viewer || !this.canvasService || !this.viewer.container) {
       return 1;
     }
@@ -129,7 +124,7 @@ export class ZoomStrategy {
       }
     }
 
-    if (this.isViewportLargerThanCanvasGroup()) {
+    if (this.isViewportLargerThanCanvasGroup() && this.modeService.isPageZoomed()) {
       this.modeService.mode = ViewerMode.PAGE;
     } else {
       this.zoomBy(zoomFactor, position);
@@ -163,23 +158,49 @@ export class ZoomStrategy {
     );
   }
 
-  private getFittedZoomLevel(
+  getFittedZoomLevel(
     viewportBounds: any,
     canvasGroupHeight: number,
     canvasGroupWidth: number
   ) {
-    const currentZoom: number = this.viewer.viewport.getZoom();
     const resizeRatio: number = viewportBounds.height / canvasGroupHeight;
 
     if (resizeRatio * canvasGroupWidth <= viewportBounds.width) {
-      return Utils.shortenDecimals(resizeRatio * currentZoom, 5);
+      return this.getFitToHeightZoomLevel(viewportBounds.height, canvasGroupHeight);
     } else {
       // Canvas group at full height is wider than viewport.  Return fit by width instead.
-      return Utils.shortenDecimals(
-        (viewportBounds.width / canvasGroupWidth) * currentZoom,
-        5
-      );
+      return this.getFitToWidthZoomLevel(viewportBounds.width, canvasGroupWidth);
     }
+  }
+
+  getFitToHeightZoomLevel(viewportBoundsHeight: number, canvasGroupHeight: number): number {
+    const ratio: number = viewportBoundsHeight / canvasGroupHeight;
+    return Utils.shortenDecimals(ratio * this.viewer.viewport.getZoom(), 5);
+  }
+
+  getFitToWidthZoomLevel(viewportBoundsWidth: number, canvasGroupWidth: number): number {
+    return Utils.shortenDecimals((viewportBoundsWidth / canvasGroupWidth) * this.viewer.viewport.getZoom(), 5);
+  }
+
+  fitToHeight(): void {
+    const viewportBounds = this.viewer.viewport.getBounds();
+    let canvasGroupRect = this.canvasService.getCurrentCanvasGroupRect();
+    const zoomLevel = this.getFitToHeightZoomLevel(viewportBounds.height, canvasGroupRect.height);
+    this.updateViewerMode(zoomLevel);
+    this.zoomTo(zoomLevel);
+  }
+
+  fitToWidth(): void {
+    const viewportBounds: Rect = this.viewer.viewport.getBounds();
+    let canvasGroupRect = this.canvasService.getCurrentCanvasGroupRect();
+    const zoomLevel = this.getFitToWidthZoomLevel(viewportBounds.width, canvasGroupRect.width)
+    this.updateViewerMode(zoomLevel);
+    this.zoomTo(zoomLevel);
+  }
+
+  private updateViewerMode(zoomLevel: number): void {
+    const homeZoomLevel = this.getHomeZoomLevel(this.modeService.mode);
+    this.modeService.setPageModeByZoomLevel(zoomLevel, homeZoomLevel);
   }
 
   private zoomBy(zoomFactor: number, position?: Point): void {
