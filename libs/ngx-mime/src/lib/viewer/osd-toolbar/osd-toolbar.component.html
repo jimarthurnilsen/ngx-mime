@@ -33,7 +33,7 @@
               [disabled]="isFirstCanvasGroup"
               [@easeInWithDelay]="{
                 value: '',
-                params: { delayEnter: 0, delayLeave: baseAnimationDelay * 5 }
+                params: { delayEnter: 0, delayLeave: baseAnimationDelay * 7 }
               }"
               (click)="goToPreviousCanvasGroup()"
             >
@@ -50,7 +50,7 @@
               [disabled]="isLastCanvasGroup"
               [@easeInWithDelay]="{
                 value: '',
-                params: { delayEnter: 0, delayLeave: baseAnimationDelay * 5 }
+                params: { delayEnter: 0, delayLeave: baseAnimationDelay * 7 }
               }"
               (click)="goToNextCanvasGroup()"
             >
@@ -70,7 +70,7 @@
                 value: '',
                 params: {
                   delayEnter: baseAnimationDelay,
-                  delayLeave: baseAnimationDelay * 4
+                  delayLeave: baseAnimationDelay * 6
                 }
               }"
               (click)="goToNextCanvasGroup()"
@@ -90,7 +90,7 @@
                 value: '',
                 params: {
                   delayEnter: baseAnimationDelay,
-                  delayLeave: baseAnimationDelay * 4
+                  delayLeave: baseAnimationDelay * 6
                 }
               }"
               (click)="goToPreviousCanvasGroup()"
@@ -110,7 +110,7 @@
               value: '',
               params: {
                 delayEnter: baseAnimationDelay * 2,
-                delayLeave: baseAnimationDelay * 3
+                delayLeave: baseAnimationDelay * 5
               }
             }"
           >
@@ -127,7 +127,7 @@
               value: '',
               params: {
                 delayEnter: baseAnimationDelay * 3,
-                delayLeave: baseAnimationDelay * 2
+                delayLeave: baseAnimationDelay * 4
               }
             }"
           >
@@ -143,7 +143,7 @@
               value: '',
               params: {
                 delayEnter: baseAnimationDelay * 4,
-                delayLeave: baseAnimationDelay
+                delayLeave: baseAnimationDelay * 3
               }
             }"
           >
@@ -157,10 +157,38 @@
             [matTooltip]="intl.rotateCwLabel"
             [@easeInWithDelay]="{
               value: '',
-              params: { delayEnter: baseAnimationDelay * 5, delayLeave: 0 }
+              params: { delayEnter: baseAnimationDelay * 5, delayLeave: 2 }
             }"
           >
             <mat-icon>rotate_right</mat-icon>
+          </button>
+
+          <button
+            [ngClass]="{ selected: fitTo === FitTo.WIDTH }"
+            mat-mini-fab
+            data-testId="ngx-mimeFitToWidthButton"
+            (click)="toggleFitToWidth()"
+            [@easeInWithDelay]="{
+              value: '',
+              params: {
+                delayEnter: baseAnimationDelay * 6,
+                delayLeave: baseAnimationDelay
+              }
+            }"
+          >
+            <mat-icon>fit_width</mat-icon>
+          </button>
+          <button
+            [ngClass]="{ selected: fitTo === FitTo.HEIGHT }"
+            mat-mini-fab
+            data-testId="ngx-mimeFitToHeightButton"
+            (click)="toggleFitToHeight()"
+            [@easeInWithDelay]="{
+              value: '',
+              params: { delayEnter: baseAnimationDelay * 7, delayLeave: 0 }
+            }"
+          >
+            <mat-icon class="ngx-mime-rotate-90">fit_width</mat-icon>
           </button>
         }
       </div>

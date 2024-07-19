@@ -1,6 +1,7 @@
 import { Locator, Page } from 'playwright';
 import { Animations } from '../helpers/animations';
 import { ParameterType } from '../support/ParameterType';
+import { ViewerUtil } from '../helpers/viewer.util';
 
 const thumbStartPosition = <any>{ x: 600, y: 300 };
 const pointerPosition1 = <any>{ x: 650, y: 275 };
@@ -56,9 +57,9 @@ export class ViewerPage {
   private contentSearchSubmitButton: Locator;
   private svg: Locator;
   private canvasGroupOverlays: Locator;
+  private canvasGroupOverlay: Locator;
   private leftCanvasGroupMask: Locator;
   private rightCanvasGroupMask: Locator;
-  private canvasGroupOverlay: Locator;
   private singlePageViewButton: Locator;
   private twoPageViewButton: Locator;
   private horizontalScrollDirectionButton: Locator;
@@ -382,13 +383,14 @@ export class ViewerPage {
         ' || document.msFullscreenElement != null)',
     );
   }
+
   async getSVGElement() {
     await this.svg.waitFor();
     return this.svg;
   }
 
   getAllCanvasGroupOverlays() {
-    return this.canvasGroupOverlays;
+    return this.canvasGroupOverlay;
   }
 
   async getLeftCanvasGroupMask() {
@@ -403,6 +405,20 @@ export class ViewerPage {
     const first = this.canvasGroupOverlay.first();
     await first.waitFor();
     return first;
+  }
+
+  async getCurrentCanvasGroupOverlay(): Promise<Locator> {
+    const currentCanvasGroupLabel = await this.getCurrentCanvasGroupLabel();
+    const page = Number(ViewerUtil.getFirstPartOfCurrentCanvasGroupLabel(currentCanvasGroupLabel));
+    let canvasGroup: Locator;
+    if (await this.isTwoPageView()) {
+      canvasGroup = this.pageGroup.nth(page - 1);
+    } else {
+      canvasGroup = this.canvasGroupOverlay.nth(page - 1);
+    }
+
+    await canvasGroup.waitFor();
+    return canvasGroup;
   }
 
   async openViewMenu(): Promise<void> {
@@ -434,6 +450,12 @@ export class ViewerPage {
   getZoomLevel(): Promise<number> {
     return this.page.evaluate(
       'window.openSeadragonViewer.viewport.getZoom(true)',
+    );
+  }
+
+  getHomeZoom(): Promise<number> {
+    return this.page.evaluate(
+      'window.openSeadragonViewer.viewport.getHomeZoom()'
     );
   }
 
@@ -612,6 +634,40 @@ export class ViewerPage {
       );
 
       return widthIsFitted || heightIsFitted;
+    } else {
+      throw new Error('Error finding bounding box');
+    }
+  }
+
+  async isCurrentCanvasEqualViewportWidth(): Promise<boolean> {
+    const svgParent = await this.getSVGElement();
+    const overlay = await this.getCurrentCanvasGroupOverlay();
+    const svgParentDimensions = await svgParent.boundingBox();
+    const overlayDimensions = await overlay.boundingBox();
+
+    if (svgParentDimensions && overlayDimensions) {
+      return this.numbersAreClose(
+        svgParentDimensions.width,
+        overlayDimensions.width,
+        5
+      );
+    } else {
+      throw new Error('Error finding bounding box');
+    }
+  }
+
+  async isCurrentCanvasEqualViewportHeight(): Promise<boolean> {
+    const svgParent = await this.getSVGElement();
+    const overlay = await this.getCurrentCanvasGroupOverlay();
+    const svgParentDimensions = await svgParent.boundingBox();
+    const overlayDimensions = await overlay.boundingBox();
+
+    if (svgParentDimensions && overlayDimensions) {
+      return this.numbersAreClose(
+        svgParentDimensions.height,
+        overlayDimensions.height,
+        5
+      );
     } else {
       throw new Error('Error finding bounding box');
     }

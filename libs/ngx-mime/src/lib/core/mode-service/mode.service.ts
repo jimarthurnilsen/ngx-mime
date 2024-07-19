@@ -16,7 +16,9 @@ export class ModeService {
   }
 
   get onChange(): Observable<ModeChanges> {
-    return this.toggleModeSubject.asObservable().pipe(distinctUntilChanged());
+    return this.toggleModeSubject
+      .asObservable()
+      .pipe(distinctUntilChanged(this.hasChanged));
   }
 
   set mode(mode: ViewerMode) {
@@ -41,25 +43,37 @@ export class ModeService {
   }
 
   toggleMode(): void {
-    if (this.mode === ViewerMode.DASHBOARD) {
+    if (this.isDashBoard()) {
       this.mode = ViewerMode.PAGE;
-    } else if (
-      this.mode === ViewerMode.PAGE ||
-      this.mode === ViewerMode.PAGE_ZOOMED
-    ) {
+    } else if (this.isPage() || this.isPageZoomed()) {
       this.mode = ViewerMode.DASHBOARD;
     }
+  }
+
+  isDashBoard(): boolean {
+    return this.mode === ViewerMode.DASHBOARD;
+  }
+
+  isPage(): boolean {
+    return this.mode === ViewerMode.PAGE;
   }
 
   isPageZoomed(): boolean {
     return this.mode === ViewerMode.PAGE_ZOOMED;
   }
 
+  setViewerModeByZoomLevel(zoomLevel: number, homeZoomLevel: number): void {
+    this.mode =
+      zoomLevel > homeZoomLevel ? ViewerMode.PAGE_ZOOMED : ViewerMode.PAGE;
+  }
+
   private change() {
     this.modeChanges.previousValue = this.modeChanges.currentValue;
     this.modeChanges.currentValue = this._mode;
-    this.toggleModeSubject.next({
-      ...this.modeChanges,
-    });
+    this.toggleModeSubject.next(this.modeChanges);
+  }
+
+  private hasChanged(previous: ModeChanges, current: ModeChanges): boolean {
+    return current.previousValue === current.currentValue;
   }
 }

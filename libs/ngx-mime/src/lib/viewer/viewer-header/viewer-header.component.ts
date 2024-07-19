@@ -19,15 +19,15 @@ import {
 import { Subscription } from 'rxjs';
 import { ManifestUtils } from '../../core/iiif-manifest-service/iiif-manifest-utils';
 import { MimeDomHelper } from '../../core/mime-dom-helper';
-import { ViewerOptions } from '../../core/models/viewer-options';
+import { Manifest, ViewerOptions } from '../../core/models';
 import { HelpDialogService } from '../../help-dialog/help-dialog.service';
 import { InformationDialogService } from '../../information-dialog/information-dialog.service';
 import { ViewDialogService } from '../../view-dialog/view-dialog.service';
-import { ContentSearchDialogService } from './../../content-search-dialog/content-search-dialog.service';
-import { FullscreenService } from './../../core/fullscreen-service/fullscreen.service';
-import { IiifManifestService } from './../../core/iiif-manifest-service/iiif-manifest-service';
-import { MimeViewerIntl } from './../../core/intl';
-import { Manifest } from './../../core/models/manifest';
+import { ContentSearchDialogService } from '../../content-search-dialog/content-search-dialog.service';
+import { FullscreenService } from '../../core/fullscreen-service/fullscreen.service';
+import { IiifManifestService } from '../../core/iiif-manifest-service/iiif-manifest-service';
+import { MimeViewerIntl } from '../../core/intl';
+import { CanvasService } from '../../core/canvas-service/canvas-service';
 
 @Component({
   selector: 'mime-viewer-header',
@@ -87,6 +87,7 @@ export class ViewerHeaderComponent implements OnInit, OnDestroy {
     private iiifManifestService: IiifManifestService,
     private fullscreenService: FullscreenService,
     private mimeDomHelper: MimeDomHelper,
+    private canvasService: CanvasService,
   ) {}
 
   @HostBinding('@headerState')
@@ -169,5 +170,13 @@ export class ViewerHeaderComponent implements OnInit, OnDestroy {
       ? this.intl.exitFullScreenLabel
       : this.intl.fullScreenLabel;
     this.changeDetectorRef.detectChanges();
+  }
+
+  toggleFitToWidth() {
+    this.canvasService.toggleFitToWidth();
+  }
+
+  toggleFitToHeight() {
+    this.canvasService.toggleFitToHeight();
   }
 }

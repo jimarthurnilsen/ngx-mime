@@ -12,7 +12,7 @@ export class ConstraintStrategy implements Strategy {
   constructor(
     protected modeService: ModeService,
     protected canvasService: CanvasService,
-    protected viewer: any
+    protected viewer: any,
   ) {}
 
   constraintCanvas(): void {
@@ -26,7 +26,7 @@ export class ConstraintStrategy implements Strategy {
           x: rect.x,
           y: rect.y,
         },
-        immediately
+        immediately,
       );
     }
   }
@@ -36,15 +36,19 @@ export class ConstraintStrategy implements Strategy {
   }
 }
 
-export class HorizontalConstraintStrategy extends ConstraintStrategy implements Strategy {
+export class HorizontalConstraintStrategy
+  extends ConstraintStrategy
+  implements Strategy
+{
   override constraintCanvas() {
-    if (this.modeService.isPageZoomed()) {
+    if (!this.panStatus) {
       const viewportBounds: Rect = this.getViewportBounds();
-      const currentCanvasBounds = this.canvasService.getCurrentCanvasGroupRect();
+      const currentCanvasBounds =
+        this.canvasService.getCurrentCanvasGroupRect();
       this.isCanvasOutsideViewport(viewportBounds, currentCanvasBounds)
         ? this.constraintCanvasOutsideViewport(
             viewportBounds,
-            currentCanvasBounds
+            currentCanvasBounds,
           )
         : this.constraintCanvasInsideViewport(viewportBounds);
     }
@@ -52,51 +56,56 @@ export class HorizontalConstraintStrategy extends ConstraintStrategy implements 
 
   private isCanvasOutsideViewport(
     viewportBounds: Rect,
-    canvasBounds: Rect
+    canvasBounds: Rect,
   ): boolean {
     return viewportBounds.height < canvasBounds.height;
   }
 
   private constraintCanvasOutsideViewport(
     viewportBounds: Rect,
-    canvasBounds: Rect
+    canvasBounds: Rect,
   ): void {
+    this.panStatus = true;
     let rect: Rect | undefined = undefined;
     if (this.isCanvasBelowViewportTop(viewportBounds, canvasBounds)) {
       rect = new Rect({
         x: viewportBounds.x + viewportBounds.width / 2,
         y: canvasBounds.y + viewportBounds.height / 2,
       });
+      this.panTo(rect, false);
     } else if (this.isCanvasAboveViewportBottom(viewportBounds, canvasBounds)) {
       rect = new Rect({
         x: viewportBounds.x + viewportBounds.width / 2,
         y: canvasBounds.y + canvasBounds.height - viewportBounds.height / 2,
       });
+      this.panTo(rect, false);
     }
-    this.panTo(rect, true);
+    this.panStatus = false;
   }
 
   private constraintCanvasInsideViewport(viewportBounds: Rect): void {
+    this.panStatus = true;
     const canvasGroupRect = this.canvasService.getCanvasGroupRect(
-      this.canvasService.currentCanvasGroupIndex
+      this.canvasService.currentCanvasGroupIndex,
     );
     const rect = new Rect({
       x: viewportBounds.x + viewportBounds.width / 2,
       y: canvasGroupRect.centerY,
     });
-    this.panTo(rect, true);
+    this.panTo(rect, false);
+    this.panStatus = false;
   }
 
   private isCanvasBelowViewportTop(
     viewportBounds: Rect,
-    canvasBounds: Rect
+    canvasBounds: Rect,
   ): boolean {
     return viewportBounds.y < canvasBounds.y;
   }
 
   private isCanvasAboveViewportBottom(
     viewportBounds: Rect,
-    canvasBounds: Rect
+    canvasBounds: Rect,
   ): boolean {
     return (
       canvasBounds.y + canvasBounds.height <
@@ -105,32 +114,38 @@ export class HorizontalConstraintStrategy extends ConstraintStrategy implements 
   }
 }
 
-export class VerticalConstraintStrategy extends ConstraintStrategy implements Strategy {
+export class VerticalConstraintStrategy
+  extends ConstraintStrategy
+  implements Strategy
+{
   override constraintCanvas(): void {
-    if (this.modeService.isPageZoomed() && !this.panStatus) {
+    if (!this.panStatus) {
       const viewportBounds: Rect = this.getViewportBounds();
       const currentCanvasGroupBounds =
         this.canvasService.getCurrentCanvasGroupRect();
-
-      this.isCanvasOutsideViewport(viewportBounds, currentCanvasGroupBounds)
-        ? this.constraintCanvasOutsideViewport(
-            viewportBounds,
-            currentCanvasGroupBounds
-          )
-        : this.constraintCanvasInsideViewport(viewportBounds);
+      if (this.modeService.isPageZoomed()) {
+        this.isCanvasOutsideViewport(viewportBounds, currentCanvasGroupBounds)
+          ? this.constraintCanvasOutsideViewport(
+              viewportBounds,
+              currentCanvasGroupBounds,
+            )
+          : this.constraintCanvasInsideViewport(viewportBounds);
+      } else {
+        this.snapToCenter(currentCanvasGroupBounds, viewportBounds);
+      }
     }
   }
 
   private isCanvasOutsideViewport(
     viewportBounds: Rect,
-    canvasBounds: Rect
+    canvasBounds: Rect,
   ): boolean {
     return viewportBounds.width < canvasBounds.width;
   }
 
   private constraintCanvasOutsideViewport(
     viewportBounds: Rect,
-    canvasBounds: Rect
+    canvasBounds: Rect,
   ): void {
     if (this.isViewportLeftOfCanvas(viewportBounds, canvasBounds)) {
       this.snapToLeft(canvasBounds, viewportBounds);
@@ -142,7 +157,7 @@ export class VerticalConstraintStrategy extends ConstraintStrategy implements St
 
   private constraintCanvasInsideViewport(viewportBounds: Rect): void {
     const canvasGroupRect = this.canvasService.getCanvasGroupRect(
-      this.canvasService.currentCanvasGroupIndex
+      this.canvasService.currentCanvasGroupIndex,
     );
     this.snapToCenter(canvasGroupRect, viewportBounds);
   }

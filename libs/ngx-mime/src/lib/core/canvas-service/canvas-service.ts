@@ -1,14 +1,16 @@
 import { Injectable } from '@angular/core';
 import * as OpenSeadragon from 'openseadragon';
 import { Viewer } from 'openseadragon';
-import { ScrollDirectionService } from '../scroll-direction-service/scroll-direction-service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { distinctUntilChanged } from 'rxjs/operators';
+
+import { ScrollDirectionService } from '../scroll-direction-service/scroll-direction-service';
 import { MimeViewerConfig } from '../mime-viewer-config';
 import { ViewerLayoutService } from '../viewer-layout-service/viewer-layout-service';
 import { TileSourceStrategyFactory } from '../viewer-service/tile-source-strategy-factory';
 import {
   CanvasGroups,
+  FitTo,
   Point,
   Rect,
   Resource,
@@ -26,6 +28,7 @@ export class CanvasService {
     new BehaviorSubject(0);
   protected canvasGroups: CanvasGroups = new CanvasGroups();
   protected _numberOfCanvases = 0;
+  fitTo$: BehaviorSubject<FitTo> = new BehaviorSubject<FitTo>(FitTo.NONE);
   private config = new MimeViewerConfig();
   private tileSources: any[] = [];
   private viewer: Viewer | undefined = undefined;
@@ -56,7 +59,7 @@ export class CanvasService {
   }
 
   set currentCanvasGroupIndex(currentCanvasGroupIndex: number) {
-    if (!this.isWithinBounds(currentCanvasGroupIndex)) {
+    if (!this.isCanvasGroupWithinRange(currentCanvasGroupIndex)) {
       return;
     }
     this._currentCanvasGroupIndex.next(currentCanvasGroupIndex);
@@ -113,19 +116,61 @@ export class CanvasService {
     this.createAndAppendCanvasGroups();
   }
 
-  isWithinBounds(canvasGroupIndex: number): boolean {
+  toggleFitToHeight() {
+    if (this.isFitToHeightEnabled()) {
+      this.resetFitTo();
+    } else {
+      this.fitTo$.next(FitTo.HEIGHT);
+    }
+  }
+
+  toggleFitToWidth(): void {
+    if (this.isFitToWidthEnabled()) {
+      this.resetFitTo();
+    } else {
+      this.fitTo$.next(FitTo.WIDTH);
+    }
+  }
+
+  resetFitTo(): void {
+    if (this.isFitToEnabled()) {
+      this.fitTo$.next(FitTo.NONE);
+    }
+  }
+
+  isFitToEnabled(): boolean {
+    return this.fitTo$.getValue() !== FitTo.NONE;
+  }
+
+  isFitToWidthEnabled(): boolean {
+    return this.fitTo$.getValue() === FitTo.WIDTH;
+  }
+
+  isFitToHeightEnabled(): boolean {
+    return this.fitTo$.getValue() === FitTo.HEIGHT;
+  }
+
+  isCanvasGroupWithinRange(canvasGroupIndex: number): boolean {
     return (
       canvasGroupIndex > -1 && canvasGroupIndex <= this.numberOfCanvasGroups - 1
     );
   }
 
   isCurrentCanvasGroupValid(): boolean {
-    return this.isWithinBounds(this.currentCanvasGroupIndex);
+    return this.isCanvasGroupWithinRange(this.currentCanvasGroupIndex);
+  }
+
+  isNextCanvasGroupValid(): boolean {
+    return this.isCanvasGroupWithinRange(this.currentCanvasGroupIndex + 1);
+  }
+
+  isPreviousCanvasGroupValid(): boolean {
+    return this.isCanvasGroupWithinRange(this.currentCanvasGroupIndex - 1);
   }
 
   // Returns -1 if next canvas index is out of bounds
   getNextCanvasGroupIndex(): number {
-    if (!this.isWithinBounds(this.currentCanvasGroupIndex + 1)) {
+    if (!this.isNextCanvasGroupValid()) {
       return -1;
     }
     this.currentCanvasGroupIndex++;
@@ -134,7 +179,7 @@ export class CanvasService {
 
   // Returns -1 if previous canvas index is out of bounds
   getPrevCanvasGroupIndex(): number {
-    if (!this.isWithinBounds(this.currentCanvasGroupIndex - 1)) {
+    if (!this.isPreviousCanvasGroupValid()) {
       return -1;
     }
     this.currentCanvasGroupIndex--;

@@ -14,13 +14,12 @@ import {
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { IiifManifestService } from '../../core/iiif-manifest-service/iiif-manifest-service';
-import { Manifest } from '../../core/models/manifest';
-import { ViewingDirection } from '../../core/models/viewing-direction';
-import { CanvasService } from './../../core/canvas-service/canvas-service';
-import { MimeViewerIntl } from './../../core/intl';
-import { ViewerService } from './../../core/viewer-service/viewer.service';
-import { ModeService } from './../../core/mode-service/mode.service';
-import { easeInWithDelay, rotate45 } from './../../shared/animations';
+import { FitTo, Manifest, ViewingDirection } from '../../core/models';
+import { CanvasService } from '../../core/canvas-service/canvas-service';
+import { MimeViewerIntl } from '../../core/intl';
+import { ViewerService } from '../../core/viewer-service/viewer.service';
+import { ModeService } from '../../core/mode-service/mode.service';
+import { easeInWithDelay, rotate45 } from '../../shared/animations';
 
 @Component({
   selector: 'mime-osd-toolbar',
@@ -41,6 +40,8 @@ export class OsdToolbarComponent implements OnInit, OnDestroy {
   showControlButtons = false;
   baseAnimationDelay = 20;
   isZoomed = true;
+  protected readonly FitTo = FitTo;
+  fitTo = FitTo.NONE;
   private subscriptions = new Subscription();
 
   constructor(
@@ -50,7 +51,7 @@ export class OsdToolbarComponent implements OnInit, OnDestroy {
     private viewerService: ViewerService,
     private canvasService: CanvasService,
     private iiifManifestService: IiifManifestService,
-    private modeService: ModeService
+    private modeService: ModeService,
   ) {}
 
   ngOnInit() {
@@ -58,7 +59,7 @@ export class OsdToolbarComponent implements OnInit, OnDestroy {
       this.modeService.onChange.subscribe(() => {
         this.isZoomed = this.modeService.isPageZoomed();
         this.changeDetectorRef.detectChanges();
-      })
+      }),
     );
 
     this.subscriptions.add(
@@ -67,7 +68,7 @@ export class OsdToolbarComponent implements OnInit, OnDestroy {
         .subscribe((value: BreakpointState) => {
           this.isWeb = value.matches;
           this.changeDetectorRef.detectChanges();
-        })
+        }),
     );
 
     this.subscriptions.add(
@@ -77,8 +78,8 @@ export class OsdToolbarComponent implements OnInit, OnDestroy {
             this.invert = manifest.viewingDirection === ViewingDirection.LTR;
             this.changeDetectorRef.detectChanges();
           }
-        }
-      )
+        },
+      ),
     );
 
     this.subscriptions.add(
@@ -86,18 +87,25 @@ export class OsdToolbarComponent implements OnInit, OnDestroy {
         (currentCanvasGroupIndex: number) => {
           this.numberOfCanvasGroups = this.canvasService.numberOfCanvasGroups;
           this.isFirstCanvasGroup = this.isOnFirstCanvasGroup(
-            currentCanvasGroupIndex
+            currentCanvasGroupIndex,
           );
           this.isLastCanvasGroup = this.isOnLastCanvasGroup(
-            currentCanvasGroupIndex
+            currentCanvasGroupIndex,
           );
           this.changeDetectorRef.detectChanges();
-        }
-      )
+        },
+      ),
     );
 
     this.subscriptions.add(
-      this.intl.changes.subscribe(() => this.changeDetectorRef.markForCheck())
+      this.intl.changes.subscribe(() => this.changeDetectorRef.markForCheck()),
+    );
+
+    this.subscriptions.add(
+      this.canvasService.fitTo$.subscribe((fitTo: FitTo) => {
+        this.fitTo = fitTo;
+        this.changeDetectorRef.detectChanges();
+      }),
     );
   }
 
@@ -127,12 +135,20 @@ export class OsdToolbarComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  toggleFitToWidth() {
+    this.canvasService.toggleFitToWidth();
+  }
+
+  toggleFitToHeight() {
+    this.canvasService.toggleFitToHeight();
+  }
+
   public goToPreviousCanvasGroup(): void {
-    this.viewerService.goToPreviousCanvasGroup();
+    this.viewerService.goToPreviousCanvasGroup(true);
   }
 
   public goToNextCanvasGroup(): void {
-    this.viewerService.goToNextCanvasGroup();
+    this.viewerService.goToNextCanvasGroup(true);
   }
 
   private isOnFirstCanvasGroup(currentCanvasGroupIndex: number): boolean {

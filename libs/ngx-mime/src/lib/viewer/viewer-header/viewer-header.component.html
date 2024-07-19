@@ -1,4 +1,4 @@
-<mat-toolbar>
+<mat-toolbar class="viewer-header-container">
   <ng-template #mimeHeaderBefore></ng-template>
   @if (manifest) {
     <div
@@ -8,6 +8,22 @@
       >{{ manifest.label }}</div
     >
   }
+
+  <button
+    mat-icon-button
+    data-testId="ngx-mimeFitToWidthButton"
+    (click)="toggleFitToWidth()"
+  >
+    <mat-icon>fit_width</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    data-testId="ngx-mimeFitToHeightButton"
+    (click)="toggleFitToHeight()"
+  >
+    <mat-icon class="ngx-mime-rotate-90">fit_width</mat-icon>
+  </button>
+
   @if (!isSinglePagedManifest || hasRecognizedTextContent) {
     <button
       data-testid="ngx-mime-view-menu-button"

@@ -18,9 +18,7 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { interval, Subscription } from 'rxjs';
-import {
-  ScrollDirectionService
-} from '../core/scroll-direction-service/scroll-direction-service';
+import { ScrollDirectionService } from '../core/scroll-direction-service/scroll-direction-service';
 import { take, throttle } from 'rxjs/operators';
 import { AttributionDialogService } from '../attribution-dialog/attribution-dialog.service';
 import { CanvasGroupDialogService } from '../canvas-group-dialog/canvas-group-dialog.service';
@@ -35,27 +33,27 @@ import { MimeResizeService } from '../core/mime-resize-service/mime-resize.servi
 import { MimeViewerConfig } from '../core/mime-viewer-config';
 import { ModeService } from '../core/mode-service/mode.service';
 import {
+  Manifest,
   ModeChanges,
   RecognizedTextMode,
   RecognizedTextModeChanges,
+  SearchResult,
+  ViewerLayout,
   ViewerMode,
+  ViewerOptions,
+  ViewerState,
 } from '../core/models';
-import { Manifest } from '../core/models/manifest';
-import { ViewerLayout } from '../core/models/viewer-layout';
-import { ViewerOptions } from '../core/models/viewer-options';
-import { ViewerState } from '../core/models/viewerState';
 import { StyleService } from '../core/style-service/style.service';
 import { ViewerLayoutService } from '../core/viewer-layout-service/viewer-layout-service';
 import { ViewerService } from '../core/viewer-service/viewer.service';
 import { HelpDialogService } from '../help-dialog/help-dialog.service';
 import { InformationDialogService } from '../information-dialog/information-dialog.service';
 import { ViewDialogService } from '../view-dialog/view-dialog.service';
-import { IiifContentSearchService } from './../core/iiif-content-search-service/iiif-content-search.service';
-import { SearchResult } from './../core/models/search-result';
+import { IiifContentSearchService } from '../core/iiif-content-search-service/iiif-content-search.service';
 import { ViewerFooterComponent } from './viewer-footer/viewer-footer.component';
 import { ViewerHeaderComponent } from './viewer-header/viewer-header.component';
 import { VIEWER_PROVIDERS } from './viewer.providers';
-import { slideInLeft } from './../shared/animations';
+import { slideInLeft } from '../shared/animations';
 
 @Component({
   selector: 'mime-viewer',
@@ -438,6 +436,15 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
           }
           break;
         case ViewerMode.PAGE:
+          this.showHeaderAndFooterState =
+            this.header.state =
+            this.footer.state =
+              'hide';
+          if (this.config.navigationControlEnabled && this.osdToolbarState) {
+            this.osdToolbarState = 'show';
+          }
+          break;
+        case ViewerMode.PAGE_ZOOMED:
           this.showHeaderAndFooterState =
             this.header.state =
             this.footer.state =
